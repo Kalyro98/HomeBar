@@ -12,6 +12,9 @@ final class PanelController: NSObject, NSWindowDelegate {
     /// Wird gesetzt, sobald der Nutzer das Fenster anklickt/zieht (Pin).
     var onUserInteraction: (() -> Void)?
 
+    private(set) var isFullScreen = false
+    private var savedFullScreenFrame: NSRect?
+
     init(rootView: some View) {
         let hosting = NSHostingView(rootView: rootView)
 
@@ -41,6 +44,12 @@ final class PanelController: NSObject, NSWindowDelegate {
         panel.contentView = hosting
 
         panel.interactionHandler = { [weak self] in self?.onUserInteraction?() }
+        // Esc verlässt den Vollbildmodus.
+        panel.escapeHandler = { [weak self] in
+            guard let self, self.isFullScreen else { return false }
+            self.setFullScreen(false)
+            return true
+        }
     }
 
     var isVisible: Bool { panel.isVisible }
@@ -57,8 +66,30 @@ final class PanelController: NSObject, NSWindowDelegate {
     }
 
     func hide() {
+        if isFullScreen { setFullScreen(false) }   // beim Schließen Vollbild zurücksetzen
         panel.orderOut(nil)
     }
+
+    // MARK: - Vollbild
+
+    /// Füllt den gesamten Bildschirm (über der Menüleiste); merkt sich den vorherigen Frame.
+    func setFullScreen(_ on: Bool) {
+        guard let screen = panel.screen ?? NSScreen.main else { return }
+        if on, !isFullScreen {
+            savedFullScreenFrame = panel.frame
+            isFullScreen = true
+            panel.level = .mainMenu + 1     // deckt die Menüleiste ab
+            panel.setFrame(screen.frame, display: true, animate: true)
+        } else if !on, isFullScreen {
+            isFullScreen = false
+            panel.level = .floating
+            if let f = savedFullScreenFrame {
+                panel.setFrame(f, display: true, animate: true)
+            }
+        }
+    }
+
+    func toggleFullScreen() { setFullScreen(!isFullScreen) }
 
     /// App aktivieren und Fenster zum Key-Window machen (für Texteingabe/Login in der WebView).
     func activate() {
@@ -120,14 +151,17 @@ final class PanelController: NSObject, NSWindowDelegate {
 
     // MARK: - NSWindowDelegate
 
-    func windowDidResize(_ notification: Notification) { saveFrame() }
-    func windowDidMove(_ notification: Notification) { saveFrame() }
+    // Im Vollbild NICHT speichern, sonst überschreibt der Bildschirm-Frame die normale Größe.
+    func windowDidResize(_ notification: Notification) { if !isFullScreen { saveFrame() } }
+    func windowDidMove(_ notification: Notification) { if !isFullScreen { saveFrame() } }
 }
 
 /// NSPanel-Subklasse, die Key werden darf (für Texteingabe in den Einstellungen)
 /// und Interaktionen (Klick) meldet, damit der Hover-Modus zum Pin wechselt.
 final class Panel: NSPanel {
     var interactionHandler: (() -> Void)?
+    /// Esc-Behandlung (z. B. Vollbild verlassen); gibt `true` zurück, wenn verarbeitet.
+    var escapeHandler: (() -> Bool)?
 
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { true }
@@ -137,5 +171,11 @@ final class Panel: NSPanel {
             interactionHandler?()
         }
         super.sendEvent(event)
+    }
+
+    override func keyDown(with event: NSEvent) {
+        // 53 = Escape
+        if event.keyCode == 53, escapeHandler?() == true { return }
+        super.keyDown(with: event)
     }
 }

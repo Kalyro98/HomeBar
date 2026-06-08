@@ -4,10 +4,15 @@ import Carbon.HIToolbox
 /// Hilfsfunktionen zum Aufnehmen und Anzeigen von Tastenkürzeln.
 enum HotKeyUtils {
 
-    /// Carbon-Standard: ⌘⇧H
+    /// Carbon-Standard Öffnen/Schließen: ⌘⇧H
     static let defaultKeyCode = Int(kVK_ANSI_H)
     static let defaultModifiers = Int(cmdKey | shiftKey)
     static let defaultChar = "H"
+
+    /// Carbon-Standard Vollbild: ⌘⇧F
+    static let fullDefaultKeyCode = Int(kVK_ANSI_F)
+    static let fullDefaultModifiers = Int(cmdKey | shiftKey)
+    static let fullDefaultChar = "F"
 
     static let escapeKeyCode = Int(kVK_Escape)
 

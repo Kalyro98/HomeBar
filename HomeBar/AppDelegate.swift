@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settings = AppSettings()
     private lazy var notifier = HANotifier(settings: settings)
     private var hotKey: GlobalHotKey?
+    private var fullHotKey: GlobalHotKey?
     private var cancellables = Set<AnyCancellable>()
 
     private var clickMonitor: Any?
@@ -34,12 +35,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.panelController.activate()
         }
 
-        // Konfigurierbarer globaler Shortcut – initial registrieren und bei Änderung neu setzen.
-        registerHotKey()
-        settings.$hotKeyKeyCode.combineLatest(settings.$hotKeyModifiers)
+        // Konfigurierbare globale Shortcuts – initial registrieren und bei Änderung neu setzen.
+        registerHotKeys()
+        settings.$hotKeyKeyCode
+            .combineLatest(settings.$hotKeyModifiers, settings.$fullKeyCode, settings.$fullModifiers)
             .dropFirst()
             .receive(on: RunLoop.main)
-            .sink { [weak self] _ in self?.registerHotKey() }
+            .sink { [weak self] _ in self?.registerHotKeys() }
             .store(in: &cancellables)
 
         // Benachrichtigungen: Berechtigung anfragen (falls aktiviert) und Notifier starten.
@@ -49,10 +51,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         notifier.start()
     }
 
-    private func registerHotKey() {
+    private func registerHotKeys() {
         hotKey = GlobalHotKey(keyCode: UInt32(settings.hotKeyKeyCode),
                               modifiers: UInt32(settings.hotKeyModifiers)) { [weak self] in
             self?.togglePanel()
+        }
+        fullHotKey = GlobalHotKey(keyCode: UInt32(settings.fullKeyCode),
+                                  modifiers: UInt32(settings.fullModifiers)) { [weak self] in
+            self?.toggleFullScreen()
         }
     }
 
@@ -84,6 +90,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                               action: #selector(openFromMenu), keyEquivalent: "")
         open.target = self
         menu.addItem(open)
+        let full = NSMenuItem(title: String(localized: "Toggle Fullscreen"),
+                              action: #selector(toggleFullScreenFromMenu), keyEquivalent: "")
+        full.target = self
+        menu.addItem(full)
         menu.addItem(.separator())
         let quit = NSMenuItem(title: String(localized: "Quit HomeBar"),
                               action: #selector(quitApp), keyEquivalent: "q")
@@ -96,6 +106,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @objc private func openFromMenu() { showPanel() }
 
+    @objc private func toggleFullScreenFromMenu() { toggleFullScreen() }
+
     @objc private func quitApp() { NSApp.terminate(nil) }
 
     // MARK: - Anzeigen / Verstecken
@@ -104,6 +116,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard let button = statusItem.button else { return }
         panelController.show(relativeTo: button, activate: true)
         startClickMonitor()
+        if settings.openInFullScreen { panelController.setFullScreen(true) }
+    }
+
+    /// Vollbild umschalten (öffnet das Fenster zuvor, falls es geschlossen ist).
+    private func toggleFullScreen() {
+        if !panelController.isVisible {
+            guard let button = statusItem.button else { return }
+            panelController.show(relativeTo: button, activate: true)
+            startClickMonitor()
+            panelController.setFullScreen(true)
+        } else {
+            panelController.toggleFullScreen()
+        }
     }
 
     private func hidePanel() {

@@ -25,6 +25,7 @@ frei in der Größe ziehbar und merkt sich Größe und Position.
   In den Einstellungen zeigt ein **grünes Häkchen**, welche Adresse gerade verbunden ist.
 - 🚀 Optionaler **Autostart bei Anmeldung** (über `SMAppService`).
 - ⌨️ **Globaler Shortcut** (Standard ⌘⇧H, frei konfigurierbar) zum Öffnen/Schließen.
+- 🖥️ **Vollbildmodus** (Schalter „Im Vollbild öffnen" oder Shortcut, Standard ⌘⇧F; Esc verlässt).
 - 🔔 **Native Benachrichtigungen** für ausgewählte Entitäten (z. B. „Tür offen", „Waschmaschine fertig").
 - 🔒 Unterstützt lokale HA-Server über **http** und **self-signed HTTPS**.
 - 🖱️ **Rechtsklick** aufs Symbol → Menü mit „Öffnen" und „Beenden".
