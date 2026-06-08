@@ -12,14 +12,14 @@
 ---
 
 **HomeBar** ist eine native macOS-Menüleisten-App, die deine **Home-Assistant-Weboberfläche**
-(Dashboards & Einstellungen) in einem eingebetteten Fenster anzeigt – ganz ohne Browser. Beim
-Überfahren des Menüleisten-Symbols klappt das Fenster auf, ein Klick fixiert es. Das Fenster ist
+(Dashboards & Einstellungen) in einem eingebetteten Fenster anzeigt – ganz ohne Browser. Ein Klick
+auf das Menüleisten-Symbol öffnet das Fenster, ein Klick daneben schließt es. Das Fenster ist
 frei in der Größe ziehbar und merkt sich Größe und Position.
 
 ## Funktionen
 - 🏠 Zeigt die **echte HA-Oberfläche** (Lovelace-Dashboards, Einstellungen) im `WKWebView` – Login
   läuft direkt auf der HA-Seite und bleibt gespeichert.
-- 🖱️ **Hover öffnet**, Klick **pinnt** das Fenster, Klick daneben schließt es.
+- 🖱️ **Klick** auf das Symbol öffnet das Fenster, Klick daneben schließt es.
 - ↔️ **Frei skalierbares** Fenster; Größe & Position werden gemerkt.
 - 🌐 **Lokal + Remote**: frei eingebbare lokale URL und Remote-Domain, mit automatischem Fallback.
   In den Einstellungen zeigt ein **grünes Häkchen**, welche Adresse gerade verbunden ist.
