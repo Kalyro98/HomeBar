@@ -79,10 +79,18 @@ umzuschalten), optional Signierung/Notarisierung, GitHub-Release.
   die `com.apple.provenance`-xattrs ab, die macOS auf dem Desktop-Pfad anhängt.
 - **DMG-Build außerhalb des Projektordners:** `build-dmg.sh` baut nach `$TMPDIR` (provenance-frei),
   sonst schlägt der Release-CodeSign fehl. Nicht auf einen Pfad unter `~/Desktop` ändern.
-- **Gestyltes DMG:** Script erstellt ein UDRW-Image, mountet es, setzt das Finder-Layout
-  (Hintergrund/Icon-Positionen) per AppleScript und konvertiert nach UDZO. Das Finder-Styling ist
-  **Best-Effort** (braucht Automations-Berechtigung „Finder steuern"); schlägt es fehl, entsteht
-  trotzdem ein funktionierendes, nur ungestyltes DMG. Layout liegt in der `.DS_Store` auf dem Image.
+- **Gestyltes DMG via `dmgbuild`:** `build-dmg.sh` nutzt **dmgbuild** (`scripts/dmg-settings.py`),
+  das Hintergrund, Fenstergröße und Icon-Positionen **direkt in die `.DS_Store` schreibt** – ganz
+  ohne Finder/AppleScript. Das ist zuverlässig und braucht keine Automations-Berechtigung (der frühere
+  AppleScript-Weg griff in nicht-interaktiven Shells nicht). Installation: `python3 -m pip install
+  --user dmgbuild`. Fehlt dmgbuild, baut das Skript ein einfaches, ungestyltes DMG via `hdiutil`.
+  Layout-Werte (Icongröße 160, Fenster 640×440, Positionen) stehen in `scripts/dmg-settings.py`;
+  das Hintergrundbild ist `scripts/dmg-background.png` (640×440).
+- **Bekanntes Thema – DMG-Hintergrund:** Icongröße/Positionen/Fenster greifen zuverlässig, aber das
+  **Hintergrundbild wird auf macOS 26 aktuell nicht gerendert** (Fenster bleibt dunkel) – sowohl über
+  dmgbuild-Alias als auch über Finder/AppleScript. Vermutlich Alias-/Bookmark-Auflösung. Offen;
+  mögliche Ansätze: TIFF-Hintergrund, pyobjc/Quartz, oder `backgroundColor` statt Bild. Layout selbst
+  ist davon unberührt.
 - **Versionsregel:** Bei jeder neuen Testversion `MARKETING_VERSION` **und** `CURRENT_PROJECT_VERSION`
   erhöhen. (Aktuell 0.5 / 5.)
 - **App-Icon:** Asset-Katalog `Assets.xcassets`, `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon`. Das

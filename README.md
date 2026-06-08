@@ -48,10 +48,14 @@ xcodebuild -project HomeBar.xcodeproj -scheme HomeBar -configuration Release bui
 
 ### DMG erzeugen
 ```bash
+# Einmalig für das gestylte DMG-Layout:
+python3 -m pip install --user dmgbuild
+
 ./scripts/build-dmg.sh          # Ergebnis: dist/HomeBar.dmg
 ```
-Das Skript baut die Release-Version und packt sie in ein gestyltes DMG (Hintergrundbild,
-Icon-Positionen, Drag-to-Applications).
+Das Skript baut die Release-Version und packt sie mit **dmgbuild** in ein gestyltes DMG
+(Hintergrundbild, große Icons, Drag-to-Applications). Ohne `dmgbuild` entsteht ein einfaches,
+ungestyltes DMG.
 
 ## Hinweise
 - Die App ist **nicht signiert/notarisiert** (für den persönlichen Gebrauch gedacht) – daher der
