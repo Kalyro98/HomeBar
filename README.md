@@ -2,6 +2,11 @@
   <img src="HomeBar/Assets.xcassets/AppIcon.appiconset/icon_256.png" width="128" alt="HomeBar Icon">
   <h1>HomeBar</h1>
   <p>Deine Home-Assistant-Oberfläche direkt in der macOS-Menüleiste.</p>
+  <p>
+    <a href="https://github.com/Kalyro98/HomeBar/releases/latest/download/HomeBar.dmg"><b>⬇️ HomeBar herunterladen (DMG)</b></a>
+    &nbsp;·&nbsp;
+    <a href="https://github.com/Kalyro98/HomeBar/releases/latest">Alle Releases</a>
+  </p>
 </div>
 
 ---
@@ -29,7 +34,7 @@ frei in der Größe ziehbar und merkt sich Größe und Position.
 - Zum Selbst-Bauen: Xcode 16 oder neuer
 
 ## Installation
-1. Das `HomeBar.dmg` aus den [Releases](../../releases) laden.
+1. Das [`HomeBar.dmg`](https://github.com/Kalyro98/HomeBar/releases/latest/download/HomeBar.dmg) laden (immer die neueste Version).
 2. DMG öffnen und **HomeBar** in den **Programme**-Ordner ziehen.
 3. Beim ersten Start (App ist nicht signiert): **Rechtsklick auf HomeBar → „Öffnen"** und im Dialog
    bestätigen. Danach startet sie normal.
