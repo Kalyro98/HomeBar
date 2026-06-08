@@ -1,0 +1,94 @@
+# HomeBar — macOS Menüleisten-App
+
+## Ziel
+Native macOS-Menüleisten-App (kein eigenständiger Browser), die die **echte Home-Assistant-
+Weboberfläche** (Dashboards + Einstellungen) in einem eingebetteten `WKWebView` anzeigt — so, als
+würde man sich im Browser auf die HA-Instanz einloggen. Der Login erfolgt direkt auf der HA-Seite,
+die Session bleibt erhalten. **Keine** nachgebauten Geräte-Controls.
+
+Icon oben in der Menüleiste; bei **Hover** öffnet sich das Fenster, **Klick** pinnt es. Das Fenster
+ist ein echtes, **in der Größe ziehbares** Fenster, dessen Größe und Position über jedes Öffnen
+hinweg gemerkt werden. Verteilung als **DMG** (unsigniert, privat).
+
+## Tech-Stack
+- Swift 5 / SwiftUI (Views) + AppKit (Menüleiste & Fenster) + **WebKit (`WKWebView`)**
+- macOS 14.0+, arm64 · Xcode 26.5
+- Keine externen Abhängigkeiten (nur Apple-Frameworks)
+- HA-Anzeige: WKWebView lädt die HA-URL; **persistenter Datenspeicher** (`WKWebsiteDataStore.default()`)
+  → Login/Cookies bleiben über Neustarts erhalten. Kein Token, keine eigene API-Anbindung.
+
+## Pfad
+`/Users/dino/Desktop/Claude/Homelab/HomeBar`
+- Xcode-Projekt: `HomeBar.xcodeproj`
+- Quellen: `HomeBar/`
+- DMG-Build: `scripts/build-dmg.sh` → Ausgabe in `dist/HomeBar.dmg`
+  (gestyltes Fenster mit Hintergrund `scripts/dmg-background.png`, Icon-Positionen, Applications-Symlink)
+
+## Dateien (Quellen)
+- `HomeBarApp.swift` — @main, reine Menüleisten-App (Settings-Scene leer)
+- `AppDelegate.swift` — NSStatusItem, Hover/Pin, globale Maus-Monitore, App-Aktivierung bei Klick
+- `PanelController.swift` — resizable NSPanel, Positionierung, Frame-Persistenz, `activate()`
+- `ViewModels/AppSettings.swift` — lokale URL + Remote-Domain (UserDefaults), primary/fallback
+- `Views/WebView.swift` — `WebController` (WKWebView + Navigation/Fallback) + `WebViewRepresentable`
+- `Views/PanelView.swift` — Toolbar (zurück/home/reload/einstellungen) + WebView
+- `Views/SettingsView.swift` — URL-Eingabefelder, Verbindungs-Häkchen, Autostart-Schalter
+- `Helpers/LaunchAtLogin.swift` — Autostart via SMAppService
+- `Assets.xcassets/AppIcon.appiconset` — App-Icon (alle macOS-Größen, aus `~/Downloads/HomeAssistantBar.png (Originalname)`
+  freigestellt; Quell-/Generierungsskripte lagen in `/tmp/icon_prep.py` + `/tmp/icon_gen.py`)
+
+## Aktueller Stand
+v0.5 — eingebettete HA-Weboberfläche; grünes Häkchen in den Einstellungen zeigt die aktive
+Adresse (lokal/remote); **Autostart bei Anmeldung** via SMAppService; **eigenes App-Icon**
+(Asset-Katalog). Debug- und Release-Build grün, DMG baut.
+Implementiert:
+- Menüleisten-Icon mit Hover-Öffnen + Klick-Pin + Klick-außerhalb-schließen
+- Resizable NSPanel mit Frame-Persistenz (Größe **und** Position in UserDefaults `panelFrame`)
+- WKWebView lädt HA-Oberfläche, Lokal→Remote-Fallback bei Ladefehler, persistenter Login
+- Toolbar: Zurück, Startseite, Neu laden, Einstellungen
+- Einstellungen: frei eingebbare lokale URL/IP + Remote-Domain
+
+Nächste mögliche Schritte: „Reachability"-Check vor dem Laden (statt erst bei Ladefehler
+umzuschalten), optional Signierung/Notarisierung, GitHub-Release.
+
+## Build & Run
+- **In Xcode:** `HomeBar.xcodeproj` öffnen, Scheme „HomeBar", Run.
+- **DMG bauen:** `./scripts/build-dmg.sh` → `dist/HomeBar.dmg`.
+- **Installieren:** DMG mounten, App nach `/Applications` ziehen. Da **unsigniert**: Erststart per
+  **Rechtsklick auf die App → „Öffnen"**.
+
+## Einrichtung (Endnutzer)
+1. App starten → Menüleisten-Icon → Zahnrad → lokale URL (z. B. `http://192.168.1.x:8123`) und/oder
+   Remote-Domain eintragen → „Speichern & Laden".
+2. Auf der geladenen HA-Seite normal einloggen — die Anmeldung bleibt gespeichert.
+
+## Konventionen & Invarianten
+- **Reine Menüleisten-App:** `LSUIElement = YES`, `setActivationPolicy(.accessory)` → kein Dock-Icon.
+  Die UI hängt am `NSPanel` (AppDelegate/PanelController), **nicht** an einer SwiftUI-WindowGroup.
+- **Hover vs. Pin:** Hover öffnet ohne App-Aktivierung; Klick aufs Icon oder ins Fenster setzt
+  `pinned=true` und ruft `PanelController.activate()` → App wird aktiv und Fenster key, damit Login
+  und Texteingabe in der WebView funktionieren. `Panel.canBecomeKey` ist überschrieben.
+- **Schließen:** globaler `.mouseMoved`-Monitor (Hover-Schließen, nur wenn nicht gepinnt) +
+  globaler `.mouseDown`-Monitor (Klick-außerhalb-Schließen, auch gepinnt).
+- **Frame-Persistenz:** `windowDidResize`/`windowDidMove` schreiben sofort `panelFrame`;
+  `positionPanel` stellt ihn vor dem Anzeigen wieder her.
+- **WebView-Login persistent:** `WKWebsiteDataStore.default()` (NICHT `.nonPersistent()`), sonst
+  müsste man sich bei jedem Start neu einloggen.
+- **URL-Fallback:** `WebController` lädt zuerst `primaryURLString` (lokal, sonst remote); bei
+  `didFailProvisionalNavigation` einmalig auf `fallbackURLString` umschalten.
+- **Signing:** ad-hoc (`CODE_SIGN_IDENTITY = "-"`), **Hardened Runtime AUS** — sonst lehnt `codesign`
+  die `com.apple.provenance`-xattrs ab, die macOS auf dem Desktop-Pfad anhängt.
+- **DMG-Build außerhalb des Projektordners:** `build-dmg.sh` baut nach `$TMPDIR` (provenance-frei),
+  sonst schlägt der Release-CodeSign fehl. Nicht auf einen Pfad unter `~/Desktop` ändern.
+- **Gestyltes DMG:** Script erstellt ein UDRW-Image, mountet es, setzt das Finder-Layout
+  (Hintergrund/Icon-Positionen) per AppleScript und konvertiert nach UDZO. Das Finder-Styling ist
+  **Best-Effort** (braucht Automations-Berechtigung „Finder steuern"); schlägt es fehl, entsteht
+  trotzdem ein funktionierendes, nur ungestyltes DMG. Layout liegt in der `.DS_Store` auf dem Image.
+- **Versionsregel:** Bei jeder neuen Testversion `MARKETING_VERSION` **und** `CURRENT_PROJECT_VERSION`
+  erhöhen. (Aktuell 0.5 / 5.)
+- **App-Icon:** Asset-Katalog `Assets.xcassets`, `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon`. Das
+  Menüleisten-Icon bleibt bewusst das SF-Symbol `house.fill` (Template, klein) — das App-Icon
+  erscheint in Finder/DMG/Anmeldeobjekten, nicht in der Menüleiste (Accessory-App ohne Dock-Icon).
+- **Autostart:** `LaunchAtLogin` nutzt `SMAppService.mainApp` (kein Helfer-Bundle). Zuverlässig nur
+  für die in `/Applications` installierte Kopie an stabilem Pfad; aus DerivedData/Desktop heraus kann
+  die Registrierung den falschen Pfad eintragen.
+- **Sprache:** UI-Texte, Fehlermeldungen und Kommentare durchgehend Deutsch.

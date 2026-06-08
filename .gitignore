@@ -1,0 +1,13 @@
+# Build-Artefakte
+build/
+dist/
+DerivedData/
+*.dmg
+
+# Xcode-Benutzerdaten
+xcuserdata/
+*.xcuserstate
+**/xcshareddata/WorkspaceSettings.xcsettings
+
+# macOS
+.DS_Store
