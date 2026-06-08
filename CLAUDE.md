@@ -33,13 +33,20 @@ hinweg gemerkt werden. Verteilung als **DMG** (unsigniert, privat).
 - `Views/PanelView.swift` — Toolbar (zurück/home/reload/einstellungen) + WebView
 - `Views/SettingsView.swift` — URL-Eingabefelder, Verbindungs-Häkchen, Autostart-Schalter
 - `Helpers/LaunchAtLogin.swift` — Autostart via SMAppService
+- `Helpers/GlobalHotKey.swift` — globaler Shortcut via Carbon `RegisterEventHotKey` (⌘⇧H)
+- `Services/HANotifier.swift` — HA-WebSocket nur für Benachrichtigungen (Token, get_states,
+  subscribe state_changed → `UNUserNotificationCenter`)
+- `Services/KeychainStore.swift` — Token-Speicher (Keychain, Service `ch.kalyro.HomeBar`)
+- `Info.plist` (Projekt-Root, **nicht** im Sync-Ordner) — manuelle Info.plist mit `LSUIElement`,
+  `NSAppTransportSecurity → NSAllowsArbitraryLoads`, `NSLocalNetworkUsageDescription`
 - `Assets.xcassets/AppIcon.appiconset` — App-Icon (alle macOS-Größen, aus `~/Downloads/HomeAssistantBar.png (Originalname)`
   freigestellt; Quell-/Generierungsskripte lagen in `/tmp/icon_prep.py` + `/tmp/icon_gen.py`)
 
 ## Aktueller Stand
-v0.6 — eingebettete HA-Weboberfläche; grünes Häkchen zeigt die aktive Adresse (lokal/remote);
-Autostart bei Anmeldung; eigenes App-Icon; **Rechtsklick-Menü** (Öffnen/Beenden) auf dem
-Menüleisten-Symbol; **Lokalisierung Englisch + Deutsch** (automatisch nach Systemsprache).
+v0.7 — eingebettete HA-Weboberfläche; aktive Adresse mit grünem Häkchen; Autostart; App-Icon;
+Rechtsklick-Menü; Lokalisierung EN/DE. **Neu in 0.7:** globaler Shortcut **⌘⇧H**;
+**self-signed-Zertifikate** für konfigurierte Hosts + **ATS-Ausnahme** (lokale HA über http/https);
+**native Benachrichtigungen** für ausgewählte Entitäten (HA-WebSocket mit Token).
 Debug- und Release-Build grün, DMG baut.
 Implementiert:
 - Menüleisten-Icon mit Hover-Öffnen + Klick-Pin + Klick-außerhalb-schließen
@@ -93,7 +100,17 @@ umzuschalten), optional Signierung/Notarisierung, GitHub-Release.
   mögliche Ansätze: TIFF-Hintergrund, pyobjc/Quartz, oder `backgroundColor` statt Bild. Layout selbst
   ist davon unberührt.
 - **Versionsregel:** Bei jeder neuen Testversion `MARKETING_VERSION` **und** `CURRENT_PROJECT_VERSION`
-  erhöhen. (Aktuell 0.6 / 6.)
+  erhöhen. (Aktuell 0.7 / 7.)
+- **Info.plist ist manuell** (`GENERATE_INFOPLIST_FILE = NO`, `INFOPLIST_FILE = Info.plist`). Liegt
+  im **Projekt-Root**, damit die file-system-synchronized Group sie nicht doppelt als Ressource
+  einbindet. ATS-Ausnahme nötig, sonst lädt die WebView keine lokalen http/self-signed-HA-Server.
+- **Self-signed-Zerts:** `WebController` akzeptiert Server-Trust **nur** für Hosts aus
+  `localURL`/`remoteURL` (siehe `isConfiguredHost`) – kein blindes Vertrauen für beliebige Seiten.
+- **Benachrichtigungen:** `HANotifier` verbindet sobald ein Token gesetzt ist (auch um die
+  Entitätenliste zu laden); Benachrichtigungen werden nur bei `notificationsEnabled` **und** für
+  Entitäten in `watchedEntityIDs` gesendet, und nur bei echtem Zustandswechsel (Snapshot = Baseline,
+  `unavailable`/`unknown` werden ignoriert). Token in der Keychain, nicht in UserDefaults.
+- **Shortcut:** `GlobalHotKey` (Carbon) braucht keine Bedienungshilfen-Berechtigung; fest auf ⌘⇧H.
 - **App-Icon:** Asset-Katalog `Assets.xcassets`, `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon`. Das
   Menüleisten-Icon bleibt bewusst das SF-Symbol `house.fill` (Template, klein) — das App-Icon
   erscheint in Finder/DMG/Anmeldeobjekten, nicht in der Menüleiste (Accessory-App ohne Dock-Icon).

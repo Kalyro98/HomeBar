@@ -4,11 +4,13 @@ import SwiftUI
 /// (Dashboards, Einstellungen) in einem WKWebView. Schmale Toolbar für Navigation.
 struct PanelView: View {
     @ObservedObject var settings: AppSettings
+    @ObservedObject var notifier: HANotifier
     @StateObject private var web: WebController
     @State private var showSettings = false
 
-    init(settings: AppSettings) {
+    init(settings: AppSettings, notifier: HANotifier) {
         self.settings = settings
+        self.notifier = notifier
         _web = StateObject(wrappedValue: WebController(settings: settings))
     }
 
@@ -24,9 +26,10 @@ struct PanelView: View {
     @ViewBuilder
     private var content: some View {
         if showSettings {
-            SettingsView(settings: settings, web: web) {
+            SettingsView(settings: settings, web: web, notifier: notifier) {
                 showSettings = false
                 web.loadPrimary()
+                notifier.restart()
             }
         } else if !settings.isConfigured {
             notConfiguredHint

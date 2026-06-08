@@ -24,6 +24,9 @@ frei in der Größe ziehbar und merkt sich Größe und Position.
 - 🌐 **Lokal + Remote**: frei eingebbare lokale URL und Remote-Domain, mit automatischem Fallback.
   In den Einstellungen zeigt ein **grünes Häkchen**, welche Adresse gerade verbunden ist.
 - 🚀 Optionaler **Autostart bei Anmeldung** (über `SMAppService`).
+- ⌨️ **Globaler Shortcut ⌘⇧H** zum Öffnen/Schließen von überall.
+- 🔔 **Native Benachrichtigungen** für ausgewählte Entitäten (z. B. „Tür offen", „Waschmaschine fertig").
+- 🔒 Unterstützt lokale HA-Server über **http** und **self-signed HTTPS**.
 - 🖱️ **Rechtsklick** aufs Symbol → Menü mit „Öffnen" und „Beenden".
 - 🌍 **Zweisprachig** (Deutsch/Englisch) – automatisch nach Systemsprache.
 - 🧭 Reine Menüleisten-App (kein Dock-Icon).
@@ -43,6 +46,11 @@ frei in der Größe ziehbar und merkt sich Größe und Position.
 1. Auf das Menüleisten-Symbol klicken → **Zahnrad** (Einstellungen).
 2. **Lokale URL/IP** (z. B. `http://192.168.1.50:8123`) und/oder **Remote-Domain** eintragen → **Speichern & Laden**.
 3. Auf der geladenen HA-Seite ganz normal einloggen – die Anmeldung bleibt gespeichert.
+4. **Optional – Benachrichtigungen:** In Home Assistant unter *Profil → Sicherheit* ein
+   **Long-Lived Access Token** erzeugen, in den Einstellungen eintragen, „Benachrichtigungen
+   aktivieren" einschalten und die gewünschten Entitäten auswählen.
+
+Mit **⌘⇧H** öffnest/schließt du HomeBar von überall.
 
 ## Aus dem Quellcode bauen
 ```bash

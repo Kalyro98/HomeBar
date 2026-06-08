@@ -1,6 +1,41 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Access token (for notifications)" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Access Token (für Benachrichtigungen)" } }
+      }
+    },
+    "Enable notifications" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Benachrichtigungen aktivieren" } }
+      }
+    },
+    "Enter an access token to load entities." : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Access Token eingeben, um Entitäten zu laden." } }
+      }
+    },
+    "Loading entities…" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Entitäten werden geladen…" } }
+      }
+    },
+    "Notifications" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Benachrichtigungen" } }
+      }
+    },
+    "Notify me about these entities:" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Bei diesen Entitäten benachrichtigen:" } }
+      }
+    },
+    "Search…" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Suchen…" } }
+      }
+    },
     "connected" : {
       "localizations" : {
         "de" : { "stringUnit" : { "state" : "translated", "value" : "verbunden" } }

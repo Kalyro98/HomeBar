@@ -113,6 +113,30 @@ final class WebController: NSObject, ObservableObject, WKNavigationDelegate {
         errorText = error.localizedDescription
     }
 
+    /// Akzeptiert self-signed-Zertifikate – aber NUR für die in den Einstellungen
+    /// konfigurierten Hosts (lokale HA-Instanzen mit eigenem Zertifikat).
+    func webView(_ webView: WKWebView,
+                 didReceive challenge: URLAuthenticationChallenge,
+                 completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust,
+              let trust = challenge.protectionSpace.serverTrust,
+              isConfiguredHost(challenge.protectionSpace.host) else {
+            completionHandler(.performDefaultHandling, nil)
+            return
+        }
+        completionHandler(.useCredential, URLCredential(trust: trust))
+    }
+
+    private func isConfiguredHost(_ host: String) -> Bool {
+        for s in [settings.localURL, settings.remoteURL] where !s.isEmpty {
+            if let h = Self.normalizedURL(from: s)?.host,
+               h.caseInsensitiveCompare(host) == .orderedSame {
+                return true
+            }
+        }
+        return false
+    }
+
     // MARK: - Helfer
 
     static func normalizedURL(from base: String, path: String? = nil) -> URL? {

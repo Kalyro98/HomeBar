@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import Carbon.HIToolbox
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -7,6 +8,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: NSStatusItem!
     private var panelController: PanelController!
     private let settings = AppSettings()
+    private lazy var notifier = HANotifier(settings: settings)
+    private var hotKey: GlobalHotKey?
 
     private var pinned = false
     private var showWork: DispatchWorkItem?
@@ -28,11 +31,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // Fenster mit der HA-Weboberfläche
-        panelController = PanelController(rootView: PanelView(settings: settings))
+        panelController = PanelController(rootView: PanelView(settings: settings, notifier: notifier))
         panelController.onUserInteraction = { [weak self] in
             // Klick ins Fenster -> pinnen UND App aktivieren, damit Login/Eingabe funktioniert.
             self?.pinned = true
             self?.panelController.activate()
+        }
+
+        // Globaler Shortcut ⌘⇧H zum Öffnen/Schließen.
+        hotKey = GlobalHotKey(keyCode: UInt32(kVK_ANSI_H),
+                              modifiers: UInt32(cmdKey | shiftKey)) { [weak self] in
+            self?.toggleFromHotKey()
+        }
+
+        // Benachrichtigungen: Berechtigung anfragen (falls aktiviert) und Notifier starten.
+        if settings.notificationsEnabled {
+            HANotifier.requestAuthorization()
+        }
+        notifier.start()
+    }
+
+    private func toggleFromHotKey() {
+        if panelController.isVisible {
+            hidePanel()
+        } else {
+            pinned = true
+            showPanel(activate: true)
         }
     }
 

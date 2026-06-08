@@ -1,9 +1,10 @@
 import Foundation
 import Combine
 
-/// Benutzer-Einstellungen: frei eingebbare lokale URL und Remote-Domain der HA-Instanz.
-/// Es wird die echte HA-Weboberfläche geladen; der Login erfolgt dort (Session/Cookies
-/// bleiben über den persistenten WKWebView-Datenspeicher erhalten) – daher kein Token nötig.
+/// Benutzer-Einstellungen: lokale URL/Remote-Domain (für die WebView) sowie – optional –
+/// ein Access Token und eine Auswahl von Entitäten für native Benachrichtigungen.
+/// Die WebView-Anmeldung läuft über Cookies; das Token wird NUR für Benachrichtigungen
+/// (HA-WebSocket) gebraucht und liegt in der Keychain.
 final class AppSettings: ObservableObject {
     private let defaults = UserDefaults.standard
 
@@ -14,9 +15,28 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(remoteURL, forKey: Keys.remoteURL) }
     }
 
+    /// Long-Lived Access Token (Keychain, nicht UserDefaults).
+    @Published var token: String {
+        didSet {
+            if token.isEmpty { KeychainStore.deleteToken() }
+            else { KeychainStore.saveToken(token) }
+        }
+    }
+    /// Benachrichtigungen aktiv?
+    @Published var notificationsEnabled: Bool {
+        didSet { defaults.set(notificationsEnabled, forKey: Keys.notificationsEnabled) }
+    }
+    /// Entitäten, die für Benachrichtigungen überwacht werden.
+    @Published var watchedEntityIDs: Set<String> {
+        didSet { defaults.set(Array(watchedEntityIDs), forKey: Keys.watched) }
+    }
+
     init() {
         self.localURL = defaults.string(forKey: Keys.localURL) ?? ""
         self.remoteURL = defaults.string(forKey: Keys.remoteURL) ?? ""
+        self.notificationsEnabled = defaults.bool(forKey: Keys.notificationsEnabled)
+        self.watchedEntityIDs = Set(defaults.stringArray(forKey: Keys.watched) ?? [])
+        self.token = KeychainStore.loadToken() ?? ""
     }
 
     var isConfigured: Bool {
@@ -37,5 +57,7 @@ final class AppSettings: ObservableObject {
     private enum Keys {
         static let localURL = "localURL"
         static let remoteURL = "remoteURL"
+        static let notificationsEnabled = "notificationsEnabled"
+        static let watched = "watchedEntityIDs"
     }
 }
