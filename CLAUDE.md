@@ -43,10 +43,10 @@ hinweg gemerkt werden. Verteilung als **DMG** (unsigniert, privat).
   freigestellt; Quell-/Generierungsskripte lagen in `/tmp/icon_prep.py` + `/tmp/icon_gen.py`)
 
 ## Aktueller Stand
-v0.7 — eingebettete HA-Weboberfläche; aktive Adresse mit grünem Häkchen; Autostart; App-Icon;
-Rechtsklick-Menü; Lokalisierung EN/DE. **Neu in 0.7:** globaler Shortcut **⌘⇧H**;
-**self-signed-Zertifikate** für konfigurierte Hosts + **ATS-Ausnahme** (lokale HA über http/https);
-**native Benachrichtigungen** für ausgewählte Entitäten (HA-WebSocket mit Token).
+v0.8 — eingebettete HA-Weboberfläche; aktive Adresse mit grünem Häkchen; Autostart; App-Icon;
+Rechtsklick-Menü; Lokalisierung EN/DE. **0.7:** globaler Shortcut, self-signed-Zertifikate für
+konfigurierte Hosts + ATS-Ausnahme (lokale HA über http/https), native Benachrichtigungen für
+ausgewählte Entitäten (HA-WebSocket mit Token). **Neu in 0.8:** Shortcut **frei konfigurierbar**.
 Debug- und Release-Build grün, DMG baut.
 Implementiert:
 - Menüleisten-Icon mit Hover-Öffnen + Klick-Pin + Klick-außerhalb-schließen
@@ -100,7 +100,7 @@ umzuschalten), optional Signierung/Notarisierung, GitHub-Release.
   mögliche Ansätze: TIFF-Hintergrund, pyobjc/Quartz, oder `backgroundColor` statt Bild. Layout selbst
   ist davon unberührt.
 - **Versionsregel:** Bei jeder neuen Testversion `MARKETING_VERSION` **und** `CURRENT_PROJECT_VERSION`
-  erhöhen. (Aktuell 0.7 / 7.)
+  erhöhen. (Aktuell 0.8 / 8.)
 - **Info.plist ist manuell** (`GENERATE_INFOPLIST_FILE = NO`, `INFOPLIST_FILE = Info.plist`). Liegt
   im **Projekt-Root**, damit die file-system-synchronized Group sie nicht doppelt als Ressource
   einbindet. ATS-Ausnahme nötig, sonst lädt die WebView keine lokalen http/self-signed-HA-Server.
@@ -110,7 +110,10 @@ umzuschalten), optional Signierung/Notarisierung, GitHub-Release.
   Entitätenliste zu laden); Benachrichtigungen werden nur bei `notificationsEnabled` **und** für
   Entitäten in `watchedEntityIDs` gesendet, und nur bei echtem Zustandswechsel (Snapshot = Baseline,
   `unavailable`/`unknown` werden ignoriert). Token in der Keychain, nicht in UserDefaults.
-- **Shortcut:** `GlobalHotKey` (Carbon) braucht keine Bedienungshilfen-Berechtigung; fest auf ⌘⇧H.
+- **Shortcut:** `GlobalHotKey` (Carbon) braucht keine Bedienungshilfen-Berechtigung. **Konfigurierbar**:
+  keyCode/modifiers/Zeichen in `AppSettings` (UserDefaults), Aufnahme in `SettingsView` via
+  `NSEvent.addLocalMonitorForEvents`, Formatierung in `HotKeyUtils`. `AppDelegate` registriert per
+  `registerHotKey()` neu, sobald sich der Shortcut ändert (Combine-Observation). Standard ⌘⇧H.
 - **App-Icon:** Asset-Katalog `Assets.xcassets`, `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon`. Das
   Menüleisten-Icon bleibt bewusst das SF-Symbol `house.fill` (Template, klein) — das App-Icon
   erscheint in Finder/DMG/Anmeldeobjekten, nicht in der Menüleiste (Accessory-App ohne Dock-Icon).

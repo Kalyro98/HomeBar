@@ -31,12 +31,31 @@ final class AppSettings: ObservableObject {
         didSet { defaults.set(Array(watchedEntityIDs), forKey: Keys.watched) }
     }
 
+    // Globaler Shortcut (Carbon keyCode + modifiers + Anzeige-Zeichen).
+    @Published var hotKeyKeyCode: Int {
+        didSet { defaults.set(hotKeyKeyCode, forKey: Keys.hkCode) }
+    }
+    @Published var hotKeyModifiers: Int {
+        didSet { defaults.set(hotKeyModifiers, forKey: Keys.hkMods) }
+    }
+    @Published var hotKeyChar: String {
+        didSet { defaults.set(hotKeyChar, forKey: Keys.hkChar) }
+    }
+
     init() {
         self.localURL = defaults.string(forKey: Keys.localURL) ?? ""
         self.remoteURL = defaults.string(forKey: Keys.remoteURL) ?? ""
         self.notificationsEnabled = defaults.bool(forKey: Keys.notificationsEnabled)
         self.watchedEntityIDs = Set(defaults.stringArray(forKey: Keys.watched) ?? [])
+        let hasHK = defaults.object(forKey: Keys.hkCode) != nil
+        self.hotKeyKeyCode = hasHK ? defaults.integer(forKey: Keys.hkCode) : HotKeyUtils.defaultKeyCode
+        self.hotKeyModifiers = hasHK ? defaults.integer(forKey: Keys.hkMods) : HotKeyUtils.defaultModifiers
+        self.hotKeyChar = defaults.string(forKey: Keys.hkChar) ?? HotKeyUtils.defaultChar
         self.token = KeychainStore.loadToken() ?? ""
+    }
+
+    var hotKeyDisplay: String {
+        HotKeyUtils.display(char: hotKeyChar, carbonModifiers: hotKeyModifiers)
     }
 
     var isConfigured: Bool {
@@ -59,5 +78,8 @@ final class AppSettings: ObservableObject {
         static let remoteURL = "remoteURL"
         static let notificationsEnabled = "notificationsEnabled"
         static let watched = "watchedEntityIDs"
+        static let hkCode = "hotKeyKeyCode"
+        static let hkMods = "hotKeyModifiers"
+        static let hkChar = "hotKeyChar"
     }
 }

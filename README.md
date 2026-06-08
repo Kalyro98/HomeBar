@@ -24,7 +24,7 @@ frei in der Größe ziehbar und merkt sich Größe und Position.
 - 🌐 **Lokal + Remote**: frei eingebbare lokale URL und Remote-Domain, mit automatischem Fallback.
   In den Einstellungen zeigt ein **grünes Häkchen**, welche Adresse gerade verbunden ist.
 - 🚀 Optionaler **Autostart bei Anmeldung** (über `SMAppService`).
-- ⌨️ **Globaler Shortcut ⌘⇧H** zum Öffnen/Schließen von überall.
+- ⌨️ **Globaler Shortcut** (Standard ⌘⇧H, frei konfigurierbar) zum Öffnen/Schließen.
 - 🔔 **Native Benachrichtigungen** für ausgewählte Entitäten (z. B. „Tür offen", „Waschmaschine fertig").
 - 🔒 Unterstützt lokale HA-Server über **http** und **self-signed HTTPS**.
 - 🖱️ **Rechtsklick** aufs Symbol → Menü mit „Öffnen" und „Beenden".
@@ -50,7 +50,7 @@ frei in der Größe ziehbar und merkt sich Größe und Position.
    **Long-Lived Access Token** erzeugen, in den Einstellungen eintragen, „Benachrichtigungen
    aktivieren" einschalten und die gewünschten Entitäten auswählen.
 
-Mit **⌘⇧H** öffnest/schließt du HomeBar von überall.
+Mit dem globalen Shortcut (Standard **⌘⇧H**, in den Einstellungen änderbar) öffnest/schließt du HomeBar von überall.
 
 ## Aus dem Quellcode bauen
 ```bash

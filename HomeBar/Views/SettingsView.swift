@@ -11,6 +11,8 @@ struct SettingsView: View {
 
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
     @State private var entitySearch = ""
+    @State private var recordingHotKey = false
+    @State private var hotKeyMonitor: Any?
 
     var body: some View {
         ScrollView {
@@ -61,7 +63,43 @@ struct SettingsView: View {
                     LaunchAtLogin.set(newValue)
                     launchAtLogin = LaunchAtLogin.isEnabled
                 }
+
+            HStack {
+                Text("Shortcut to open/close")
+                Spacer()
+                Button {
+                    recordingHotKey ? stopRecording() : startRecording()
+                } label: {
+                    Text(recordingHotKey ? String(localized: "Press keys…") : settings.hotKeyDisplay)
+                        .frame(minWidth: 90)
+                }
+                .help("Click and press a key combination")
+            }
         }
+    }
+
+    // MARK: - Shortcut-Aufnahme
+
+    private func startRecording() {
+        recordingHotKey = true
+        hotKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            if Int(event.keyCode) == HotKeyUtils.escapeKeyCode {
+                stopRecording(); return nil
+            }
+            guard HotKeyUtils.hasRequiredModifier(event.modifierFlags) else {
+                NSSound.beep(); return nil   // mind. ⌘/⌃/⌥ verlangen, weiter aufnehmen
+            }
+            settings.hotKeyKeyCode = Int(event.keyCode)
+            settings.hotKeyModifiers = Int(HotKeyUtils.carbonModifiers(from: event.modifierFlags))
+            settings.hotKeyChar = HotKeyUtils.keyChar(for: event)
+            stopRecording()
+            return nil   // Ereignis schlucken
+        }
+    }
+
+    private func stopRecording() {
+        if let m = hotKeyMonitor { NSEvent.removeMonitor(m); hotKeyMonitor = nil }
+        recordingHotKey = false
     }
 
     // MARK: - Notifications

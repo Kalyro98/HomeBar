@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import Carbon.HIToolbox
+import Combine
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
@@ -10,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settings = AppSettings()
     private lazy var notifier = HANotifier(settings: settings)
     private var hotKey: GlobalHotKey?
+    private var cancellables = Set<AnyCancellable>()
 
     private var pinned = false
     private var showWork: DispatchWorkItem?
@@ -38,17 +40,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.panelController.activate()
         }
 
-        // Globaler Shortcut ⌘⇧H zum Öffnen/Schließen.
-        hotKey = GlobalHotKey(keyCode: UInt32(kVK_ANSI_H),
-                              modifiers: UInt32(cmdKey | shiftKey)) { [weak self] in
-            self?.toggleFromHotKey()
-        }
+        // Konfigurierbarer globaler Shortcut – initial registrieren und bei Änderung neu setzen.
+        registerHotKey()
+        settings.$hotKeyKeyCode.combineLatest(settings.$hotKeyModifiers)
+            .dropFirst()
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.registerHotKey() }
+            .store(in: &cancellables)
 
         // Benachrichtigungen: Berechtigung anfragen (falls aktiviert) und Notifier starten.
         if settings.notificationsEnabled {
             HANotifier.requestAuthorization()
         }
         notifier.start()
+    }
+
+    private func registerHotKey() {
+        hotKey = GlobalHotKey(keyCode: UInt32(settings.hotKeyKeyCode),
+                              modifiers: UInt32(settings.hotKeyModifiers)) { [weak self] in
+            self?.toggleFromHotKey()
+        }
     }
 
     private func toggleFromHotKey() {
