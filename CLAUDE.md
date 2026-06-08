@@ -6,7 +6,7 @@ Weboberfläche** (Dashboards + Einstellungen) in einem eingebetteten `WKWebView`
 würde man sich im Browser auf die HA-Instanz einloggen. Der Login erfolgt direkt auf der HA-Seite,
 die Session bleibt erhalten. **Keine** nachgebauten Geräte-Controls.
 
-Icon oben in der Menüleiste; bei **Hover** öffnet sich das Fenster, **Klick** pinnt es. Das Fenster
+Icon oben in der Menüleiste; **Klick** öffnet/schließt das Fenster, Klick daneben schließt es. Das Fenster
 ist ein echtes, **in der Größe ziehbares** Fenster, dessen Größe und Position über jedes Öffnen
 hinweg gemerkt werden. Verteilung als **DMG** (unsigniert, privat).
 
@@ -26,7 +26,8 @@ hinweg gemerkt werden. Verteilung als **DMG** (unsigniert, privat).
 
 ## Dateien (Quellen)
 - `HomeBarApp.swift` — @main, reine Menüleisten-App (Settings-Scene leer)
-- `AppDelegate.swift` — NSStatusItem, Hover/Pin, globale Maus-Monitore, App-Aktivierung bei Klick
+- `AppDelegate.swift` — NSStatusItem (Klick öffnet/schließt), Rechtsklick-Menü, Klick-außerhalb-Monitor,
+  globaler Shortcut, Notifier-Start
 - `PanelController.swift` — resizable NSPanel, Positionierung, Frame-Persistenz, `activate()`
 - `ViewModels/AppSettings.swift` — lokale URL + Remote-Domain (UserDefaults), primary/fallback
 - `Views/WebView.swift` — `WebController` (WKWebView + Navigation/Fallback) + `WebViewRepresentable`
@@ -43,13 +44,13 @@ hinweg gemerkt werden. Verteilung als **DMG** (unsigniert, privat).
   freigestellt; Quell-/Generierungsskripte lagen in `/tmp/icon_prep.py` + `/tmp/icon_gen.py`)
 
 ## Aktueller Stand
-v0.8 — eingebettete HA-Weboberfläche; aktive Adresse mit grünem Häkchen; Autostart; App-Icon;
+v0.9 — eingebettete HA-Weboberfläche; aktive Adresse mit grünem Häkchen; Autostart; App-Icon;
 Rechtsklick-Menü; Lokalisierung EN/DE. **0.7:** globaler Shortcut, self-signed-Zertifikate für
 konfigurierte Hosts + ATS-Ausnahme (lokale HA über http/https), native Benachrichtigungen für
-ausgewählte Entitäten (HA-WebSocket mit Token). **Neu in 0.8:** Shortcut **frei konfigurierbar**.
+ausgewählte Entitäten (HA-WebSocket mit Token). **0.8:** Shortcut frei konfigurierbar. **Neu in 0.9:** Hover entfernt (nur noch Klick zum Öffnen/Schließen).
 Debug- und Release-Build grün, DMG baut.
 Implementiert:
-- Menüleisten-Icon mit Hover-Öffnen + Klick-Pin + Klick-außerhalb-schließen
+- Menüleisten-Icon: Klick öffnet/schließt das Fenster, Klick daneben schließt
 - Resizable NSPanel mit Frame-Persistenz (Größe **und** Position in UserDefaults `panelFrame`)
 - WKWebView lädt HA-Oberfläche, Lokal→Remote-Fallback bei Ladefehler, persistenter Login
 - Toolbar: Zurück, Startseite, Neu laden, Einstellungen
@@ -72,11 +73,11 @@ umzuschalten), optional Signierung/Notarisierung, GitHub-Release.
 ## Konventionen & Invarianten
 - **Reine Menüleisten-App:** `LSUIElement = YES`, `setActivationPolicy(.accessory)` → kein Dock-Icon.
   Die UI hängt am `NSPanel` (AppDelegate/PanelController), **nicht** an einer SwiftUI-WindowGroup.
-- **Hover vs. Pin:** Hover öffnet ohne App-Aktivierung; Klick aufs Icon oder ins Fenster setzt
-  `pinned=true` und ruft `PanelController.activate()` → App wird aktiv und Fenster key, damit Login
-  und Texteingabe in der WebView funktionieren. `Panel.canBecomeKey` ist überschrieben.
-- **Schließen:** globaler `.mouseMoved`-Monitor (Hover-Schließen, nur wenn nicht gepinnt) +
-  globaler `.mouseDown`-Monitor (Klick-außerhalb-Schließen, auch gepinnt).
+- **Öffnen/Aktivieren:** Klick aufs Icon (oder der Shortcut) öffnet das Fenster und aktiviert die App
+  (`PanelController.show(activate: true)`); Klick ins Fenster ruft `activate()` → App wird key, damit
+  Login/Texteingabe in der WebView funktionieren. `Panel.canBecomeKey` ist überschrieben.
+  (Hover-zu-Öffnen wurde entfernt – auf macOS unzuverlässig und nicht HIG-konform.)
+- **Schließen:** globaler `.mouseDown`-Monitor schließt bei Klick außerhalb von Fenster und Icon.
 - **Frame-Persistenz:** `windowDidResize`/`windowDidMove` schreiben sofort `panelFrame`;
   `positionPanel` stellt ihn vor dem Anzeigen wieder her.
 - **WebView-Login persistent:** `WKWebsiteDataStore.default()` (NICHT `.nonPersistent()`), sonst
@@ -100,7 +101,7 @@ umzuschalten), optional Signierung/Notarisierung, GitHub-Release.
   mögliche Ansätze: TIFF-Hintergrund, pyobjc/Quartz, oder `backgroundColor` statt Bild. Layout selbst
   ist davon unberührt.
 - **Versionsregel:** Bei jeder neuen Testversion `MARKETING_VERSION` **und** `CURRENT_PROJECT_VERSION`
-  erhöhen. (Aktuell 0.8 / 8.)
+  erhöhen. (Aktuell 0.9 / 9.)
 - **Info.plist ist manuell** (`GENERATE_INFOPLIST_FILE = NO`, `INFOPLIST_FILE = Info.plist`). Liegt
   im **Projekt-Root**, damit die file-system-synchronized Group sie nicht doppelt als Ressource
   einbindet. ATS-Ausnahme nötig, sonst lädt die WebView keine lokalen http/self-signed-HA-Server.
@@ -128,5 +129,5 @@ umzuschalten), optional Signierung/Notarisierung, GitHub-Release.
   String-**Variablen** den `LocalizedStringKey`-Typ verwenden, sonst wird nicht übersetzt. AppKit
   (NSMenu) nutzt `String(localized:)`. Code-Kommentare können Deutsch bleiben.
 - **Rechtsklick-Menü:** Rechts-/Control-Klick auf das Status-Item öffnet ein NSMenu
-  (Öffnen/Beenden) via `menu.popUp(...)`; Linksklick bleibt Hover/Pin-Toggle. Unterscheidung über
+  (Öffnen/Beenden) via `menu.popUp(...)`; Linksklick öffnet/schließt das Fenster. Unterscheidung über
   `NSApp.currentEvent?.type`.
