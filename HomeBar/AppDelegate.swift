@@ -76,12 +76,44 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Anzeigen / Verstecken
 
     @objc private func statusItemClicked() {
-        if panelController.isVisible && pinned {
+        let event = NSApp.currentEvent
+        let isRightClick = event?.type == .rightMouseUp
+            || (event?.type == .leftMouseUp && event?.modifierFlags.contains(.control) == true)
+        if isRightClick {
+            showContextMenu()
+        } else if panelController.isVisible && pinned {
             hidePanel()
         } else {
             pinned = true
             showPanel(activate: true)
         }
+    }
+
+    /// Rechtsklick-/Control-Klick-Menü auf dem Menüleisten-Symbol.
+    private func showContextMenu() {
+        if !pinned { hidePanel() }   // Hover-Fenster ausblenden, stört sonst das Menü
+        let menu = NSMenu()
+        let open = NSMenuItem(title: String(localized: "Open HomeBar"),
+                              action: #selector(openFromMenu), keyEquivalent: "")
+        open.target = self
+        menu.addItem(open)
+        menu.addItem(.separator())
+        let quit = NSMenuItem(title: String(localized: "Quit HomeBar"),
+                              action: #selector(quitApp), keyEquivalent: "q")
+        quit.target = self
+        menu.addItem(quit)
+        if let button = statusItem.button {
+            menu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.height + 5), in: button)
+        }
+    }
+
+    @objc private func openFromMenu() {
+        pinned = true
+        showPanel(activate: true)
+    }
+
+    @objc private func quitApp() {
+        NSApp.terminate(nil)
     }
 
     private func showPanel(activate: Bool) {

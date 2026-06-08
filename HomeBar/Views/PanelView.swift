@@ -61,7 +61,7 @@ struct PanelView: View {
             Button { showSettings.toggle() } label: {
                 Image(systemName: showSettings ? "xmark" : "gearshape")
             }
-            .help("Einstellungen")
+            .help("Settings")
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 10)
@@ -71,11 +71,11 @@ struct PanelView: View {
     private var notConfiguredHint: some View {
         VStack(spacing: 10) {
             Image(systemName: "gearshape.fill").font(.largeTitle).foregroundStyle(.tint)
-            Text("Noch nicht eingerichtet").font(.headline)
-            Text("Trage in den Einstellungen die URL deiner Home-Assistant-Instanz ein.")
+            Text("Not set up yet").font(.headline)
+            Text("Enter your Home Assistant URL in the settings.")
                 .font(.callout).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
-            Button("Einstellungen öffnen") { showSettings = true }
+            Button("Open Settings") { showSettings = true }
                 .buttonStyle(.borderedProminent)
         }
         .padding(24)
@@ -85,12 +85,12 @@ struct PanelView: View {
     private func errorHint(_ message: String) -> some View {
         VStack(spacing: 8) {
             Image(systemName: "wifi.exclamationmark").font(.title).foregroundStyle(.orange)
-            Text("Verbindung fehlgeschlagen").font(.headline)
+            Text("Connection failed").font(.headline)
             Text(message).font(.caption).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
             HStack {
-                Button("Erneut versuchen") { web.loadPrimary() }
-                Button("Einstellungen") { showSettings = true }
+                Button("Try Again") { web.loadPrimary() }
+                Button("Settings") { showSettings = true }
             }
         }
         .padding(20)

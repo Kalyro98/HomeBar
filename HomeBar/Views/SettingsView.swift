@@ -1,11 +1,11 @@
 import SwiftUI
 
-/// Einstellungen: frei eingebbare lokale URL und Remote-Domain der HA-Instanz.
-/// Zeigt mit einem grünen Häkchen, welche Adresse gerade aktiv verbunden ist.
+/// Settings: freely editable local URL and remote domain of the HA instance.
+/// A green checkmark shows which address is currently connected.
 struct SettingsView: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject var web: WebController
-    /// Wird beim Speichern aufgerufen (schließt die Einstellungen und lädt neu).
+    /// Called on save (closes settings and reloads).
     var onApply: () -> Void
 
     @State private var launchAtLogin = LaunchAtLogin.isEnabled
@@ -13,34 +13,34 @@ struct SettingsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Verbindung")
+                Text("Connection")
                     .font(.title3.weight(.semibold))
 
-                field("Lokale URL/IP", text: $settings.localURL,
+                field("Local URL/IP", text: $settings.localURL,
                       placeholder: "http://192.168.1.x:8123",
-                      hint: "Wird zuhause bevorzugt verwendet.",
+                      hint: "Preferred when you're at home.",
                       status: status(for: .local))
-                field("Remote-Domain", text: $settings.remoteURL,
-                      placeholder: "https://ha.deine-domain.tld",
-                      hint: "Fallback, wenn die lokale Adresse nicht erreichbar ist.",
+                field("Remote domain", text: $settings.remoteURL,
+                      placeholder: "https://ha.your-domain.tld",
+                      hint: "Fallback when the local address isn't reachable.",
                       status: status(for: .remote))
 
-                Text("Du loggst dich direkt auf der Home-Assistant-Seite ein – die Anmeldung bleibt gespeichert.")
+                Text("You sign in directly on the Home Assistant page – your login is remembered.")
                     .font(.caption).foregroundStyle(.secondary)
 
-                Button("Speichern & Laden") { onApply() }
+                Button("Save & Load") { onApply() }
                     .buttonStyle(.borderedProminent)
                     .disabled(!settings.isConfigured)
                     .padding(.top, 4)
 
                 Divider().padding(.vertical, 4)
 
-                Text("Allgemein")
+                Text("General")
                     .font(.title3.weight(.semibold))
-                Toggle("Bei Anmeldung automatisch starten", isOn: $launchAtLogin)
+                Toggle("Launch at login", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, newValue in
                         LaunchAtLogin.set(newValue)
-                        // Realen Status zurücklesen (falls Registrierung fehlschlägt).
+                        // Read back the real status (in case registration failed).
                         launchAtLogin = LaunchAtLogin.isEnabled
                     }
             }
@@ -49,7 +49,7 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Status pro Feld
+    // MARK: - Status per field
 
     private enum FieldStatus { case none, connecting, connected }
 
@@ -58,8 +58,9 @@ struct SettingsView: View {
         return web.connected ? .connected : .connecting
     }
 
-    private func field(_ label: String, text: Binding<String>,
-                       placeholder: String, hint: String, status: FieldStatus) -> some View {
+    private func field(_ label: LocalizedStringKey, text: Binding<String>,
+                       placeholder: LocalizedStringKey, hint: LocalizedStringKey,
+                       status: FieldStatus) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             HStack(spacing: 6) {
                 Text(label).font(.subheadline.weight(.medium))
@@ -79,12 +80,12 @@ struct SettingsView: View {
         case .connected:
             HStack(spacing: 4) {
                 Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
-                Text("verbunden").font(.caption).foregroundStyle(.green)
+                Text("connected").font(.caption).foregroundStyle(.green)
             }
         case .connecting:
             HStack(spacing: 4) {
                 ProgressView().scaleEffect(0.5).frame(width: 12, height: 12)
-                Text("verbinde…").font(.caption).foregroundStyle(.secondary)
+                Text("connecting…").font(.caption).foregroundStyle(.secondary)
             }
         case .none:
             EmptyView()

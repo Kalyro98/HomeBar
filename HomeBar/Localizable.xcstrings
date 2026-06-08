@@ -1,0 +1,106 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "connected" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "verbunden" } }
+      }
+    },
+    "connecting…" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "verbinde…" } }
+      }
+    },
+    "Connection" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Verbindung" } }
+      }
+    },
+    "Connection failed" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Verbindung fehlgeschlagen" } }
+      }
+    },
+    "Enter your Home Assistant URL in the settings." : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Trage die URL deiner Home-Assistant-Instanz in den Einstellungen ein." } }
+      }
+    },
+    "Fallback when the local address isn't reachable." : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Fallback, wenn die lokale Adresse nicht erreichbar ist." } }
+      }
+    },
+    "General" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Allgemein" } }
+      }
+    },
+    "https://ha.your-domain.tld" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "https://ha.deine-domain.tld" } }
+      }
+    },
+    "Launch at login" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Bei Anmeldung automatisch starten" } }
+      }
+    },
+    "Local URL/IP" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Lokale URL/IP" } }
+      }
+    },
+    "Not set up yet" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Noch nicht eingerichtet" } }
+      }
+    },
+    "Open HomeBar" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "HomeBar öffnen" } }
+      }
+    },
+    "Open Settings" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Einstellungen öffnen" } }
+      }
+    },
+    "Preferred when you're at home." : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Wird zuhause bevorzugt verwendet." } }
+      }
+    },
+    "Quit HomeBar" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "HomeBar beenden" } }
+      }
+    },
+    "Remote domain" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Remote-Domain" } }
+      }
+    },
+    "Save & Load" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Speichern & Laden" } }
+      }
+    },
+    "Settings" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Einstellungen" } }
+      }
+    },
+    "Try Again" : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Erneut versuchen" } }
+      }
+    },
+    "You sign in directly on the Home Assistant page – your login is remembered." : {
+      "localizations" : {
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Du loggst dich direkt auf der Home-Assistant-Seite ein – die Anmeldung bleibt gespeichert." } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

@@ -37,9 +37,10 @@ hinweg gemerkt werden. Verteilung als **DMG** (unsigniert, privat).
   freigestellt; Quell-/Generierungsskripte lagen in `/tmp/icon_prep.py` + `/tmp/icon_gen.py`)
 
 ## Aktueller Stand
-v0.5 — eingebettete HA-Weboberfläche; grünes Häkchen in den Einstellungen zeigt die aktive
-Adresse (lokal/remote); **Autostart bei Anmeldung** via SMAppService; **eigenes App-Icon**
-(Asset-Katalog). Debug- und Release-Build grün, DMG baut.
+v0.6 — eingebettete HA-Weboberfläche; grünes Häkchen zeigt die aktive Adresse (lokal/remote);
+Autostart bei Anmeldung; eigenes App-Icon; **Rechtsklick-Menü** (Öffnen/Beenden) auf dem
+Menüleisten-Symbol; **Lokalisierung Englisch + Deutsch** (automatisch nach Systemsprache).
+Debug- und Release-Build grün, DMG baut.
 Implementiert:
 - Menüleisten-Icon mit Hover-Öffnen + Klick-Pin + Klick-außerhalb-schließen
 - Resizable NSPanel mit Frame-Persistenz (Größe **und** Position in UserDefaults `panelFrame`)
@@ -92,11 +93,20 @@ umzuschalten), optional Signierung/Notarisierung, GitHub-Release.
   mögliche Ansätze: TIFF-Hintergrund, pyobjc/Quartz, oder `backgroundColor` statt Bild. Layout selbst
   ist davon unberührt.
 - **Versionsregel:** Bei jeder neuen Testversion `MARKETING_VERSION` **und** `CURRENT_PROJECT_VERSION`
-  erhöhen. (Aktuell 0.5 / 5.)
+  erhöhen. (Aktuell 0.6 / 6.)
 - **App-Icon:** Asset-Katalog `Assets.xcassets`, `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon`. Das
   Menüleisten-Icon bleibt bewusst das SF-Symbol `house.fill` (Template, klein) — das App-Icon
   erscheint in Finder/DMG/Anmeldeobjekten, nicht in der Menüleiste (Accessory-App ohne Dock-Icon).
 - **Autostart:** `LaunchAtLogin` nutzt `SMAppService.mainApp` (kein Helfer-Bundle). Zuverlässig nur
   für die in `/Applications` installierte Kopie an stabilem Pfad; aus DerivedData/Desktop heraus kann
   die Registrierung den falschen Pfad eintragen.
-- **Sprache:** UI-Texte, Fehlermeldungen und Kommentare durchgehend Deutsch.
+- **Lokalisierung:** Basissprache **Englisch** (Quell-Strings im Code sind Englisch),
+  Übersetzungen in `HomeBar/Localizable.xcstrings` (+ `InfoPlist.xcstrings` für die
+  Netzwerk-Berechtigung). macOS wählt automatisch nach Systemsprache. **Neue user-facing Strings:
+  englisches Literal im Code + deutschen Eintrag in den `.xcstrings` ergänzen.** SwiftUI-`Text`/
+  `Button`/`TextField` lokalisieren String-**Literale** automatisch (LocalizedStringKey); für
+  String-**Variablen** den `LocalizedStringKey`-Typ verwenden, sonst wird nicht übersetzt. AppKit
+  (NSMenu) nutzt `String(localized:)`. Code-Kommentare können Deutsch bleiben.
+- **Rechtsklick-Menü:** Rechts-/Control-Klick auf das Status-Item öffnet ein NSMenu
+  (Öffnen/Beenden) via `menu.popUp(...)`; Linksklick bleibt Hover/Pin-Toggle. Unterscheidung über
+  `NSApp.currentEvent?.type`.

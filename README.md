@@ -19,6 +19,8 @@ frei in der Größe ziehbar und merkt sich Größe und Position.
 - 🌐 **Lokal + Remote**: frei eingebbare lokale URL und Remote-Domain, mit automatischem Fallback.
   In den Einstellungen zeigt ein **grünes Häkchen**, welche Adresse gerade verbunden ist.
 - 🚀 Optionaler **Autostart bei Anmeldung** (über `SMAppService`).
+- 🖱️ **Rechtsklick** aufs Symbol → Menü mit „Öffnen" und „Beenden".
+- 🌍 **Zweisprachig** (Deutsch/Englisch) – automatisch nach Systemsprache.
 - 🧭 Reine Menüleisten-App (kein Dock-Icon).
 
 ## Voraussetzungen
