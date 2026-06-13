@@ -44,7 +44,7 @@ hinweg gemerkt werden. Verteilung als **DMG** (unsigniert, privat).
   freigestellt; Quell-/Generierungsskripte lagen in `/tmp/icon_prep.py` + `/tmp/icon_gen.py`)
 
 ## Aktueller Stand
-v0.10 — eingebettete HA-Weboberfläche; aktive Adresse mit grünem Häkchen; Autostart; App-Icon;
+v0.11 — **Crash-Fix:** `HANotifier` thread-sicher gemacht (siehe Invariante unten). v0.10 — eingebettete HA-Weboberfläche; aktive Adresse mit grünem Häkchen; Autostart; App-Icon;
 Rechtsklick-Menü; Lokalisierung EN/DE. **0.7:** globaler Shortcut, self-signed-Zertifikate für
 konfigurierte Hosts + ATS-Ausnahme (lokale HA über http/https), native Benachrichtigungen für
 ausgewählte Entitäten (HA-WebSocket mit Token). **0.8:** Shortcut frei konfigurierbar. **0.9:** Hover entfernt (nur Klick). **Neu in 0.10:** Vollbildmodus (Schalter „Im Vollbild öffnen" + Shortcut ⌘⇧F).
@@ -107,6 +107,18 @@ umzuschalten), optional Signierung/Notarisierung, GitHub-Release.
   einbindet. ATS-Ausnahme nötig, sonst lädt die WebView keine lokalen http/self-signed-HA-Server.
 - **Self-signed-Zerts:** `WebController` akzeptiert Server-Trust **nur** für Hosts aus
   `localURL`/`remoteURL` (siehe `isConfiguredHost`) – kein blindes Vertrauen für beliebige Seiten.
+- **HANotifier ist thread-confined (KRITISCH, sonst Crash):** Aller veränderliche Zustand des
+  `HANotifier` (vor allem `task: URLSessionWebSocketTask?`, dazu `authed`, `candidateIndex`,
+  `lastStates`, …) lebt ausschließlich auf der seriellen `queue` (`ch.kalyro.HomeBar.notifier`).
+  `start`/`stop`/`restart` dispatchen darauf; die `URLSession`-`receive`-Completion-Handler und alle
+  `asyncAfter`-Timer (Verbindungs-Timeout, Reconnect) werden ebenfalls auf `queue` gehoben; veraltete
+  Task-Callbacks werden per Identitätsvergleich (`current === self.task`) verworfen. Nur die
+  `@Published`-Properties (`status`, `entities`) werden auf dem Main-Thread gesetzt. **Grund:** v0.10
+  fasste `task` gleichzeitig von Main-Thread (start/stop), `DispatchQueue.global()`-Timern und der
+  URLSession-Queue an → Data Race → ARC-Over-Release → `EXC_BAD_ACCESS`/`SIGSEGV` im CFNetwork-Stack
+  (`NSURLSessionTask resume` / `__NSCFURLSessionConnection dealloc`). Das ließ die App „nach einer
+  gewissen Zeit" aus der Menüleiste verschwinden. **Niemals** Zustand des Notifiers off-`queue`
+  mutieren oder Timer auf `DispatchQueue.global()` zurückstellen.
 - **Benachrichtigungen:** `HANotifier` verbindet sobald ein Token gesetzt ist (auch um die
   Entitätenliste zu laden); Benachrichtigungen werden nur bei `notificationsEnabled` **und** für
   Entitäten in `watchedEntityIDs` gesendet, und nur bei echtem Zustandswechsel (Snapshot = Baseline,

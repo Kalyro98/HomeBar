@@ -10,6 +10,13 @@ struct HAEntityInfo: Identifiable, Equatable {
 /// Schlanker Home-Assistant-WebSocket-Client für **Benachrichtigungen**.
 /// Verbindet (lokal → remote) mit Token, lädt die Entitätenliste und sendet bei
 /// Zustandsänderungen überwachter Entitäten native macOS-Benachrichtigungen.
+///
+/// **Thread-Sicherheit:** Der gesamte veränderliche Zustand (`task`, `authed`,
+/// `candidateIndex`, `lastStates` …) wird ausschließlich auf der seriellen `queue`
+/// angefasst. Die `URLSession`-Completion-Handler und alle `asyncAfter`-Timer
+/// werden ebenfalls auf diese Queue gehoben. Nur die `@Published`-Properties
+/// (für SwiftUI) werden auf dem Main-Thread gesetzt. Damit ist der frühere
+/// Data Race auf `task` (Over-Release → EXC_BAD_ACCESS) ausgeschlossen.
 final class HANotifier: NSObject, ObservableObject {
 
     enum Status: Equatable {
@@ -22,6 +29,9 @@ final class HANotifier: NSObject, ObservableObject {
     private let settings: AppSettings
     private var session: URLSession!
     private var task: URLSessionWebSocketTask?
+
+    /// Serielle Queue, auf der **aller** veränderliche Zustand lebt.
+    private let queue = DispatchQueue(label: "ch.kalyro.HomeBar.notifier")
 
     private var candidates: [String] = []
     private var candidateIndex = 0
@@ -38,13 +48,35 @@ final class HANotifier: NSObject, ObservableObject {
         session = URLSession(configuration: .default)
     }
 
-    // MARK: - Steuerung
+    // MARK: - Steuerung (öffentlich, von beliebigem Thread aufrufbar)
 
     /// Verbindet, sobald ein Token vorhanden ist (unabhängig davon, ob Benachrichtigungen
     /// aktiv sind – so ist die Entitätenliste zur Auswahl verfügbar).
     func start() {
+        queue.async { [weak self] in self?._start() }
+    }
+
+    func stop() {
+        queue.async { [weak self] in self?._stop() }
+    }
+
+    /// Nach geänderten Einstellungen (URL/Token) neu verbinden.
+    func restart() {
+        queue.async { [weak self] in
+            guard let self else { return }
+            self.task?.cancel(with: .goingAway, reason: nil)
+            self.task = nil
+            self.authed = false
+            self.lastStates.removeAll()
+            self._start()
+        }
+    }
+
+    // MARK: - Steuerung (intern, immer auf `queue`)
+
+    private func _start() {
         let token = settings.token.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !token.isEmpty, settings.isConfigured else { stop(); return }
+        guard !token.isEmpty, settings.isConfigured else { _stop(); return }
         shouldRun = true
         candidates = [settings.primaryURLString, settings.fallbackURLString]
             .compactMap { $0 }.filter { !$0.isEmpty }
@@ -52,7 +84,7 @@ final class HANotifier: NSObject, ObservableObject {
         attempt()
     }
 
-    func stop() {
+    private func _stop() {
         shouldRun = false
         task?.cancel(with: .goingAway, reason: nil)
         task = nil
@@ -60,16 +92,7 @@ final class HANotifier: NSObject, ObservableObject {
         setStatus(.idle)
     }
 
-    /// Nach geänderten Einstellungen (URL/Token) neu verbinden.
-    func restart() {
-        task?.cancel(with: .goingAway, reason: nil)
-        task = nil
-        authed = false
-        lastStates.removeAll()
-        start()
-    }
-
-    // MARK: - Verbindungsaufbau
+    // MARK: - Verbindungsaufbau (immer auf `queue`)
 
     private func attempt() {
         guard shouldRun else { return }
@@ -87,9 +110,10 @@ final class HANotifier: NSObject, ObservableObject {
         task = t
         t.resume()
         receive()
-        DispatchQueue.global().asyncAfter(deadline: .now() + 4) { [weak self] in
-            guard let self, !self.authed else { return }
-            self.task?.cancel(with: .goingAway, reason: nil)
+        // Timeout: nur greifen, wenn genau dieser Task noch aktuell und nicht authentifiziert ist.
+        queue.asyncAfter(deadline: .now() + 4) { [weak self] in
+            guard let self, self.task === t, !self.authed else { return }
+            t.cancel(with: .goingAway, reason: nil)
             self.candidateIndex += 1
             self.attempt()
         }
@@ -97,31 +121,37 @@ final class HANotifier: NSObject, ObservableObject {
 
     private func scheduleReconnect() {
         guard shouldRun else { return }
-        DispatchQueue.global().asyncAfter(deadline: .now() + 8) { [weak self] in
+        queue.asyncAfter(deadline: .now() + 8) { [weak self] in
             guard let self, self.shouldRun, !self.authed else { return }
             self.candidateIndex = 0
             self.attempt()
         }
     }
 
-    // MARK: - Empfang
+    // MARK: - Empfang (Completion-Handler wird auf `queue` gehoben)
 
     private func receive() {
-        task?.receive { [weak self] result in
+        guard let current = task else { return }
+        current.receive { [weak self] result in
             guard let self else { return }
-            switch result {
-            case .failure:
-                self.authed = false
-                self.task = nil
-                if self.shouldRun { self.scheduleReconnect() }
-            case .success(let message):
-                if case .string(let text) = message { self.handle(text) }
-                else if case .data(let d) = message, let text = String(data: d, encoding: .utf8) { self.handle(text) }
-                if self.task != nil { self.receive() }
+            self.queue.async {
+                // Callback eines bereits ersetzten/abgelösten Tasks ignorieren.
+                guard current === self.task else { return }
+                switch result {
+                case .failure:
+                    self.authed = false
+                    self.task = nil
+                    if self.shouldRun { self.scheduleReconnect() }
+                case .success(let message):
+                    if case .string(let text) = message { self.handle(text) }
+                    else if case .data(let d) = message, let text = String(data: d, encoding: .utf8) { self.handle(text) }
+                    if self.task != nil { self.receive() }
+                }
             }
         }
     }
 
+    /// Verarbeitet eine eingehende WebSocket-Nachricht. Läuft auf `queue`.
     private func handle(_ text: String) {
         guard let data = text.data(using: .utf8),
               let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
@@ -155,6 +185,7 @@ final class HANotifier: NSObject, ObservableObject {
         }
     }
 
+    /// Snapshot der Entitäten als Baseline übernehmen. Läuft auf `queue`.
     private func ingestSnapshot(_ arr: [[String: Any]]) {
         var names: [String: String] = [:]
         var states: [String: String] = [:]
@@ -168,33 +199,30 @@ final class HANotifier: NSObject, ObservableObject {
             list.append(HAEntityInfo(id: eid, name: name))
         }
         list.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        DispatchQueue.main.async {
-            self.nameByID = names
-            self.lastStates = states     // Baseline – kein Notify für den Snapshot
-            self.entities = list
-        }
+        nameByID = names
+        lastStates = states          // Baseline – kein Notify für den Snapshot
+        DispatchQueue.main.async { self.entities = list }
     }
 
+    /// Zustandsänderung einer Entität verarbeiten. Läuft auf `queue`.
     private func handleStateChange(_ data: [String: Any]) {
         guard let eid = data["entity_id"] as? String,
               let newState = data["new_state"] as? [String: Any] else { return }
         let newValue = newState["state"] as? String ?? ""
-        DispatchQueue.main.async {
-            let previous = self.lastStates[eid]
-            self.lastStates[eid] = newValue
-            guard self.settings.notificationsEnabled,
-                  self.settings.watchedEntityIDs.contains(eid),
-                  newValue != previous,
-                  newValue != "unavailable", newValue != "unknown" else { return }
-            let attrs = newState["attributes"] as? [String: Any]
-            let name = attrs?["friendly_name"] as? String ?? self.nameByID[eid] ?? eid
-            let unit = attrs?["unit_of_measurement"] as? String
-            let body = unit != nil ? "\(newValue) \(unit!)" : newValue
-            Self.postNotification(title: name, body: body)
-        }
+        let previous = lastStates[eid]
+        lastStates[eid] = newValue
+        guard settings.notificationsEnabled,
+              settings.watchedEntityIDs.contains(eid),
+              newValue != previous,
+              newValue != "unavailable", newValue != "unknown" else { return }
+        let attrs = newState["attributes"] as? [String: Any]
+        let name = attrs?["friendly_name"] as? String ?? nameByID[eid] ?? eid
+        let unit = attrs?["unit_of_measurement"] as? String
+        let body = unit != nil ? "\(newValue) \(unit!)" : newValue
+        Self.postNotification(title: name, body: body)
     }
 
-    // MARK: - Senden
+    // MARK: - Senden (immer auf `queue`)
 
     private func send(_ dict: [String: Any]) {
         guard let task,
